@@ -3,22 +3,41 @@
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import { useState } from 'react'
-import { Lock, Mail, ArrowRight, Loader2 } from 'lucide-react'
+import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
-    
-    // Simulate a network delay for realism
-    setTimeout(() => {
+    setErrorMsg(null)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    // 1. Ask Supabase to log in
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      setErrorMsg(error.message)
       setLoading(false)
-      router.push('/dashboard') // Redirect to dashboard after "login"
-    }, 1500)
+      return
+    }
+
+    // 2. SUCCESS!
+    // We wait 100ms to ensure the browser saves the session cookie
+    setTimeout(() => {
+        router.push('/dashboard')
+    }, 100)
   }
 
   return (
@@ -28,7 +47,6 @@ export default function LoginPage() {
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
         <div className="w-full max-w-md space-y-8 rounded-2xl bg-slate-900 p-8 shadow-xl border border-slate-800">
           
-          {/* Header */}
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600/20 text-blue-500">
               <Lock className="h-6 w-6" />
@@ -41,7 +59,14 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
+          {/* Error Banner */}
+          {errorMsg && (
+            <div className="bg-red-900/50 border border-red-800 text-red-200 p-3 rounded-lg flex items-center gap-2 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              {errorMsg}
+            </div>
+          )}
+
           <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             <div className="space-y-4 rounded-md shadow-sm">
               <div>
@@ -96,7 +121,6 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* Footer Links */}
           <div className="flex items-center justify-between text-sm">
             <Link href="#" className="font-medium text-blue-500 hover:text-blue-400">
               Forgot password?
