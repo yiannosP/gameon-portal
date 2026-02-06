@@ -1,69 +1,120 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
-import { Trophy, UserCircle, Menu, X } from 'lucide-react'
+import { Menu, X, Trophy, UserCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  // 1. Check Login Status
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setLoggedIn(!!session)
+    }
+    checkUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // 2. Define your menu links here
+  const navItems = [
+    { name: 'Tournaments', href: '#' },
+    { name: 'Leagues', href: '#' },
+    { name: 'About', href: '#' },
+  ]
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+    <nav className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-white text-xl">
-          <Trophy className="h-6 w-6 text-blue-500" />
-          <span className="tracking-tight">GAME<span className="text-blue-500">ON</span></span>
+        {/* LOGO */}
+        <Link href="/" className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors">
+          <Trophy className="h-6 w-6" />
+          <span className="text-xl font-bold tracking-tight text-white">GameOn</span>
         </Link>
 
-        {/* Desktop Navigation (Hidden on Mobile) */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <Link href="/football" className="hover:text-blue-400 transition-colors">Football</Link>
-          <Link href="/padel" className="hover:text-blue-400 transition-colors">Padel</Link>
-          <Link href="/street-soccer" className="hover:text-blue-400 transition-colors">Street Soccer</Link>
-          <Link href="/running" className="hover:text-blue-400 transition-colors">Running</Link>
-        </div>
-
-        {/* Desktop Login Button (Hidden on Mobile) */}
-        <div className="hidden md:flex">
+        {/* DESKTOP MENU (Hidden on Mobile) */}
+        <div className="hidden md:flex items-center gap-8">
+          {navItems.map((item) => (
             <Link 
-            href="/login"
-            className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500 transition-all"
+              key={item.name} 
+              href={item.href}
+              className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
             >
-            <UserCircle className="h-4 w-4" />
-            Corporate Login
+              {item.name}
             </Link>
+          ))}
+
+          {/* Dynamic Dashboard Button */}
+          {loggedIn ? (
+            <Link 
+              href="/dashboard" 
+              className="flex items-center gap-2 rounded-full bg-blue-600/10 px-4 py-2 text-sm font-semibold text-blue-500 hover:bg-blue-600/20 transition-all"
+            >
+              <UserCircle className="h-4 w-4" />
+              Dashboard
+            </Link>
+          ) : (
+            <Link 
+              href="/login" 
+              className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-all"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
 
-        {/* Mobile Menu Button (Visible ONLY on Mobile) */}
+        {/* MOBILE MENU BUTTON (Visible on Mobile) */}
         <button 
-          className="md:hidden text-slate-300 hover:text-white"
+          className="md:hidden text-slate-400 hover:text-white"
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* MOBILE MENU DROPDOWN */}
       {isOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-950 px-4 py-4 animate-in slide-in-from-top-5">
-          <div className="flex flex-col space-y-4 text-lg font-medium text-slate-300">
-            <Link href="/" onClick={() => setIsOpen(false)} className="hover:text-white">Home</Link>
-            <Link href="/football" onClick={() => setIsOpen(false)} className="hover:text-blue-400">Football</Link>
-            <Link href="/padel" onClick={() => setIsOpen(false)} className="hover:text-blue-400">Padel</Link>
-            <Link href="/street-soccer" onClick={() => setIsOpen(false)} className="hover:text-blue-400">Street Soccer</Link>
-            <Link href="/running" onClick={() => setIsOpen(false)} className="hover:text-blue-400">Running</Link>
-            <hr className="border-slate-800" />
-            <Link 
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 text-blue-500 font-bold"
+        <div className="md:hidden border-t border-slate-800 bg-slate-950 px-4 py-4 space-y-4">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="block text-base font-medium text-slate-400 hover:text-white"
+              onClick={() => setIsOpen(false)} // Close menu when clicked
             >
-              <UserCircle className="h-5 w-5" />
-              Corporate Login
+              {item.name}
             </Link>
+          ))}
+          
+          {/* Mobile Auth Button */}
+          <div className="pt-4 border-t border-slate-800">
+            {loggedIn ? (
+              <Link 
+                href="/dashboard"
+                className="flex items-center gap-2 w-full justify-center rounded-lg bg-blue-600/10 py-3 text-blue-500 font-bold"
+                onClick={() => setIsOpen(false)}
+              >
+                <UserCircle className="h-5 w-5" />
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link 
+                href="/login"
+                className="block w-full rounded-lg bg-blue-600 py-3 text-center font-bold text-white hover:bg-blue-500"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       )}

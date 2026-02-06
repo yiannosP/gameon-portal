@@ -58,14 +58,19 @@ export default function Dashboard() {
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+       {/* Mobile-Friendly Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">
               Welcome, {profile?.company_name || 'Company Admin'}
             </h1>
             <p className="text-slate-400">Manage your teams and view stats.</p>
           </div>
-          <SignOutButton />
+          
+          {/* Sign Out Button - Visible on Mobile now */}
+          <div className="self-start md:self-auto">
+            <SignOutButton />
+          </div>
         </div>
 
         {/* Dashboard Grid */}

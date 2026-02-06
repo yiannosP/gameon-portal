@@ -2,7 +2,7 @@
 
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
@@ -11,6 +11,17 @@ export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // NEW: Check if already logged in!
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.replace('/dashboard')
+      }
+    }
+    checkSession()
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -55,7 +66,7 @@ export default function LoginPage() {
               Corporate Login
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              Access your company dashboard and manage teams.
+              Access your company dashboard.
             </p>
           </div>
 
@@ -116,7 +127,7 @@ export default function LoginPage() {
                     <Lock className="h-5 w-5 text-blue-300 group-hover:text-blue-200" />
                   </span>
                 )}
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Checking...' : 'Sign in'}
               </button>
             </div>
           </form>
@@ -126,7 +137,7 @@ export default function LoginPage() {
               Forgot password?
             </Link>
             <Link href="/register" className="font-medium text-slate-400 hover:text-white flex items-center gap-1">
-              Apply for membership <ArrowRight className="h-4 w-4" />
+              Apply <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
